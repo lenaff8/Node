@@ -1,0 +1,242 @@
+<html>
+<head>
+    <!--<style>
+        selector-css {
+            reglas de css
+        }
+    </style> -->
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            cursor:none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!--<canvas id="myCanvas"></canvas>-->
+
+    <script>
+        //console.log("hello")
+
+        //const canvas = document.getElementById("myCanvas")
+        const canvas = document.createElement('canvas')
+        canvas.id = "hi"
+        document.body.appendChild(canvas)
+
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+
+        const ctx = canvas.getContext('2d')
+        
+        ctx.fillStyle = 'blue'
+        ctx.fillRect(50, 100, 20, 20) 
+        ctx.fillStyle = 'red'
+        ctx.fillRect(100, 100, 20, 20) 
+        ctx.lineWidth = 3
+        ctx.strokeRect(150, 100, 20, 20)
+
+        ctx.beginPath()
+        ctx.arc(50, 150, 10, 0, Math.PI*2)
+        ctx.fill()
+        ctx.stroke()
+
+        ctx.beginPath()
+        ctx.rect(100, 150, 20, 20)
+        ctx.fill()
+        ctx.stroke()
+
+        ctx.strokeStyle = '#AA0000'
+        ctx.beginPath()
+        ctx.moveTo(160, 150)
+        ctx.lineTo(170, 170)
+        ctx.lineTo(150, 170)
+        ctx.closePath()
+        ctx.stroke()
+
+        for(let i = 0; i < 200; i+=30) {
+            ctx.fillRect(50 + i, 200, 20, 20)
+        } 
+
+        let x = 50
+        let y = 50
+        let score = 0
+       /* function render() {
+            ctx.fillStyle = '#EEEEFF'
+            ctx.fillRect(0,0, canvas.width,canvas.height)
+            //ctx.clearRect()
+            ctx.fillStyle = 'blue'
+            ctx.fillRect(x,100,20,20)
+            x++
+        }
+        setInterval(render, 16) // se ejecuta cada 50 ms */
+        
+        /*function render() {
+            setTimeout(render, 16)
+            ctx.fillStyle = '#EEEEFF'
+            ctx.fillRect(0,0, canvas.width,canvas.height)
+            //ctx.clearRect()
+            ctx.fillStyle = 'blue'
+            ctx.fillRect(x,100,20,20)
+            x++
+        }
+        setTimeout(render, 16)*/
+
+        const enemies = []
+        const player = {
+            x:50,
+            y:50
+        }
+        
+        while (enemies.length < 50) {
+            enemies.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            velX: Math.random() * 3,
+            velY: Math.random() * 3,
+            attack: false
+            })
+        }
+
+        const coin = {
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height
+        }
+        
+
+          /*  x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+*/
+
+        function render() {
+            ctx.save()
+            
+            ctx.fillStyle = '#EEEEFF'
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+            //ctx.clearRect()
+            if (keyboard.a && player.x > 10) player.x -= 3
+            if (keyboard.d && player.x < canvas.width-10) player.x += 3
+            if (keyboard.w && player.y > 10) player.y -= 3
+            if (keyboard.s && player.x < canvas.height-10) player.y += 3
+            //ctx.fillStyle = 'blue'
+            ctx.translate(
+                canvas.width/2 - player.x,
+                canvas.height/2 - player.y
+            )
+
+            ctx.beginPath()
+            ctx.rect(player.x - canvas.width/3, player.y - canvas.height/3,
+                    2 * canvas.width/3, 2 * canvas.height/3)
+            ctx.stroke()
+            
+            
+            ctx.fillStyle = mouseIsDown ? 'cyan' : 'blue'
+            ctx.fillRect(player.x - 10, player.y - 10, 20, 20)
+            //x++
+            //debugger
+            
+            
+
+            // ENEMIES
+            ctx.fillStyle = 'red'
+            for (let i = 0; i < enemies.length; ++i) {
+                ctx.beginPath()
+                ctx.arc(enemies[i].x, enemies[i].y, 10, 0, Math.PI*2)
+                ctx.fill()
+
+                enemies[i].x += enemies[i].velX
+                if(enemies[i].x > canvas.width || enemies[i].x < 0) 
+                    enemies[i].velX *= -1
+                
+                enemies[i].y += enemies[i].velY
+                if(enemies[i].y > canvas.height || enemies[i].y < 0) 
+                    enemies[i].velY *= -1
+                if(IntersectRect(player,enemies[i])) {
+                    if(!enemies[i].attack) {
+                        score -= 1
+                        enemies[i].attack = true
+                    }
+                    
+                } 
+                else 
+                    enemies[i].attack = false
+
+            }
+            
+            // COIN 
+            ctx.fillStyle = 'green'
+            ctx.beginPath()
+            ctx.arc(coin.x, coin.y, 10, 0, Math.PI*2)
+            ctx.fill()
+            if(IntersectRect(player,coin)) {
+                coin.x = Math.random() * canvas.width
+                coin.y = Math.random() * canvas.height
+                score += 10
+            }
+
+            ctx.restore()
+            ctx.fillStyle = 'black'
+            ctx.font = "24px Helvetica"
+            ctx.fillText("score: "+score, 20, 20, 200)
+            requestAnimationFrame(render)
+
+        }
+
+        function IntersectRect(r1, r2) {
+            return !(r2.x > r1.x+10
+                    || r2.x+10 < r1.x
+                    || r2.y > r1.y+10
+                    || r2.y+10 < r1.y);
+        }
+
+
+        requestAnimationFrame(render)
+        let mouseIsDown = false
+        document.addEventListener('mousedown', function(event) {
+            mouseIsDown = true
+        })
+
+        document.addEventListener('mouseup', function(event) {
+            mouseIsDown = false
+        })
+
+        /*document.addEventListener('mousemove', function(event){
+            //debugger
+            const { pageX, pageY } = event
+            // const pageX = event.pageX
+            // const pageY = event.pageY
+            x = pageX
+            y = pageY
+        })*/
+
+        const keyboard = {}
+
+        document.addEventListener('keydown', function(event){
+            keyboard[event.key] = true
+            /*switch(event.key) {
+                case 'd': ++x; break
+                case 'a': --x; break
+                case 'w': --y; break
+                case 's': ++y; break
+            }*/
+        })
+
+        document.addEventListener('keyup', function(event){
+            keyboard[event.key] = false
+        })
+
+        
+        
+
+
+
+    </script>
+</body>
+
+</html>
