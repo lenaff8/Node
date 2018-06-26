@@ -1,0 +1,23 @@
+<body>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io()
+
+        const username = prompt("Enter yout username: ")
+
+        socket.on('hello', function(connectionsSoFar){
+            alert(connectionsSoFar)
+            socket.emit('ok')
+        })
+
+        socket.emit('im', username)
+
+        function sendMessage(msg) {
+            socket.emit('msg', msg)
+        }
+        socket.on('msg', function(msg) {
+            console.log(msg)
+        })
+
+    </script>   
+</body>
