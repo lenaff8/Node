@@ -1,0 +1,290 @@
+<html>
+
+<head>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            cursor: help;
+        }
+    </style>
+</head>
+
+<body>
+<script src="weapons.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const canvas = document.createElement('canvas')
+    document.body.appendChild(canvas)
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+    const ctx = canvas.getContext('2d')
+
+    var state = undefined
+    var myPlayer = undefined
+
+    const mouse = {
+        x: 0,
+        y: 0
+    }
+    /*const players = []
+    const boss
+    const bullets = []*/
+    //const enemyBullets = []
+
+    // init player
+    /*weapons = [weapon1,weapon2]
+    const player = {
+        id: 1,
+        x: 0, y: 0,
+        vel: 5, radius: 20,
+        weapons,
+        readyToShoot: true, shooting: false,
+        lastShoot: Date.now(), fireRate: 500,
+        shootVel: 10, damage: 5,
+        maxHp:100, hp: 100
+    }
+
+    enemies.push(boss)*/
+
+    function render() {
+        requestAnimationFrame(render)
+        if (state === undefined) return
+        const { players, boss, bullets } = state
+        ctx.fillStyle = '#EEEEFF'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+        
+        //player = players.
+
+        /*var oldX = player.x
+        var oldY = player.y
+        var intersectX = false
+        var intersectY = false
+        
+        if (keyboard.a && player.x > 10) {
+            player.x -= player.vel
+            enemies.forEach(enemy => {
+                if(IntersectCirlce(player,enemy))
+                    intersectX = true
+            })
+        }
+
+        if (keyboard.d && player.x < canvas.width-10) {
+            var intersect = false
+            player.x += player.vel
+            enemies.forEach(enemy => {
+                if(IntersectCirlce(player,enemy))
+                    intersectX = true
+            })
+        }
+
+        if (keyboard.w && player.y > 10) {
+            var intersect = false
+            player.y -= player.vel
+            enemies.forEach(enemy => {
+                if(IntersectCirlce(player,enemy))
+                    intersectY = true
+            })
+        }
+        
+        if (keyboard.s && player.y < canvas.height-10) {
+            var intersect = false
+            player.y += player.vel
+            enemies.forEach(enemy => {
+                if(IntersectCirlce(player,enemy))
+                    intersectY = true
+            })
+        }
+
+        if(intersectX) {
+            player.x = oldX
+            player.y += (player.y > canvas.height/2? 1 : -1)
+        }
+        if(intersectY) {
+            player.y = oldY
+            player.x += (player.x > canvas.width/2? 1 : -1)
+        }
+
+        angleToMouse = Math.atan2(mouse.y - player.y,mouse.x - player.x)*/
+
+        // PLAYER RENDER
+        players.forEach((player, i) => {
+            if (player.hp > 0) {
+                ctx.save()        
+                ctx.translate(player.x, player.y)
+                ctx.rotate(player.angleToMouse+Math.PI/2)
+
+                switch(i) {
+                    case 0:
+                        ctx.fillStyle = '#99d6ff'
+                    break;
+                    case 1:
+                        ctx.fillStyle = '#66ff66'
+                    break;
+                    case 2:
+                        ctx.fillStyle = '#ff9933'
+                    break;
+                    case 3:
+                        ctx.fillStyle = '#b84dff'
+                    break;
+                }
+                
+                ctx.beginPath()
+                ctx.moveTo(0, -36)
+                ctx.lineTo(15, 4)
+                ctx.lineTo(0, 14)
+                ctx.lineTo(-15,4)
+                ctx.closePath()
+                ctx.fill()
+
+                ctx.beginPath()
+                ctx.fillRect(-25, -4, 50, 8)
+
+                ctx.fillStyle = 'gray'
+                player.weaponsPlayer.forEach(weapon => {
+                    ctx.beginPath()
+                    ctx.fillRect(weapon.x,weapon.y, weapon.width, weapon.height)
+                })
+                
+                ctx.beginPath()
+                ctx.arc(0,0,7,Math.PI,2*Math.PI);
+                ctx.fill()
+                ctx.restore()
+
+                // Hp Player
+                ctx.fillStyle = 'gray'
+                ctx.beginPath()
+                ctx.fillRect(player.x-player.radius, player.y+25, player.radius*2, 8)
+                var hpPercent = player.hp/player.maxHp
+                if (hpPercent > 0.5)
+                    ctx.fillStyle = 'green'
+                else if (hpPercent > 0.3)
+                    ctx.fillStyle = 'orange'
+                else 
+                    ctx.fillStyle = 'red'
+                
+                ctx.fillRect(player.x-player.radius, player.y+25, player.radius*2*hpPercent, 8)
+            }
+        })
+        
+
+       /* // Debug bounding
+        ctx.beginPath()
+        ctx.arc(player.x,player.y,player.radius,0,2*Math.PI);
+        ctx.stroke()*/
+        
+        // BOSS RENDER
+        if(boss.hp > 0) {
+            // layer 1
+            ctx.save()
+            ctx.translate(boss.x, boss.y)
+            //boss.angle = Date.now() / 2000 % (Math.PI*2)+Math.PI/2
+            ctx.rotate(boss.angle)
+            
+            ctx.fillStyle = 'gray'
+            boss.weaponsBoss.forEach((weaponBoss,i) => {
+                ctx.beginPath()
+                ctx.fillRect(weaponBoss.x,weaponBoss.y, weaponBoss.width, weaponBoss.height)
+            
+            })
+            ctx.fillStyle = '#121212'
+            ctx.beginPath() 
+            ctx.arc(0,0,180,0,2*Math.PI);
+            ctx.fill()
+            
+            ctx.restore()
+
+            // layer 2
+            ctx.save()
+            ctx.translate(boss.x, boss.y)
+            //boss.angle = Date.now() / 2000 % (Math.PI*2)+Math.PI/2
+            ctx.rotate(-boss.angle)
+
+            ctx.fillStyle = 'gray'
+            boss.weaponsBoss2.forEach((weaponBoss,i) => {
+                ctx.beginPath()
+                ctx.fillRect(weaponBoss.x,weaponBoss.y, weaponBoss.width, weaponBoss.height)
+            
+            })
+            ctx.fillStyle = '#232323'
+            ctx.beginPath() 
+            ctx.arc(0,0,80,0,2*Math.PI);
+            ctx.fill()
+
+            ctx.restore()
+
+            // Hp Boss
+            ctx.fillStyle = 'gray'
+            ctx.beginPath()
+            ctx.fillRect(boss.x-boss.radius, boss.y+230, boss.radius*2, 16)
+            var hpPercent = boss.hp/boss.maxHp
+            if (hpPercent > 0.5)
+                ctx.fillStyle = 'green'
+            else if (hpPercent > 0.3)
+                ctx.fillStyle = 'orange'
+            else 
+                ctx.fillStyle = 'red'
+            
+            ctx.fillRect(boss.x-boss.radius, boss.y+230, boss.radius*2*hpPercent, 16)
+
+        }
+        
+        for (i = bullets.length-1; i >= 0; --i) {
+            ctx.fillStyle = bullets[i].id == socket.id? 'blue' : 'red' 
+            ctx.beginPath() 
+            ctx.arc(bullets[i].x,bullets[i].y,bullets[i].radius,0,2*Math.PI);
+            ctx.fill()
+
+        }
+
+    }
+    requestAnimationFrame(render)
+    const keyboard = {}
+
+    document.addEventListener('keydown', function(event){
+        keyboard[event.key] = true 
+        socket.emit('inputKey', keyboard)
+    })
+
+    document.addEventListener('keyup', function(event){
+        keyboard[event.key] = false
+        socket.emit('inputKey', keyboard)
+    })
+
+    document.addEventListener('mousemove', function(event){
+        mouse.x = event.clientX
+        mouse.y = event.clientY
+        socket.emit('inputMouse', mouse)
+            
+    })
+
+    document.addEventListener('mousedown', function(event){
+        mouse.click = true
+        socket.emit('inputMouse', mouse)
+
+    })
+
+    document.addEventListener('mouseup', function(event){
+        mouse.click = false
+        socket.emit('inputMouse', mouse)
+
+    })
+
+    const socket = io()
+    socket.on('state', function (newState) {
+        state = newState
+        //console.log(state, player)
+    })
+        
+
+
+
+</script>
+</body>
+
+</html>

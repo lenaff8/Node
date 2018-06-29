@@ -72,8 +72,7 @@ function logic () {
     if (player.dead) return
 
     //const { keyboard } = player
-    var _player = player,
-    keyboard = _player.keyboard;
+    var keyboard = player.keyboard
 
     if (keyboard.left) player.x--
     if (keyboard.right) player.x++

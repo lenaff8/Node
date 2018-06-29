@@ -113,3 +113,251 @@ socket.on('state', function (newState) {
 </script>
 </body>
 </html>
+
+
+
+
+function render() {
+    requestAnimationFrame(render)
+    if (state === undefined) return
+    const { players, enemies, bullets } = state
+    ctx.fillStyle = '#EEEEFF'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    
+    //player = players.
+
+    var oldX = player.x
+    var oldY = player.y
+    var intersectX = false
+    var intersectY = false
+    
+    if (keyboard.a && player.x > 10) {
+        player.x -= player.vel
+        enemies.forEach(enemy => {
+            if(IntersectCirlce(player,enemy))
+                intersectX = true
+        })
+    }
+
+    if (keyboard.d && player.x < canvas.width-10) {
+        var intersect = false
+        player.x += player.vel
+        enemies.forEach(enemy => {
+            if(IntersectCirlce(player,enemy))
+                intersectX = true
+        })
+    }
+
+    if (keyboard.w && player.y > 10) {
+        var intersect = false
+        player.y -= player.vel
+        enemies.forEach(enemy => {
+            if(IntersectCirlce(player,enemy))
+                intersectY = true
+        })
+    }
+    
+    if (keyboard.s && player.y < canvas.height-10) {
+        var intersect = false
+        player.y += player.vel
+        enemies.forEach(enemy => {
+            if(IntersectCirlce(player,enemy))
+                intersectY = true
+        })
+    }
+
+    if(intersectX) {
+        player.x = oldX
+        player.y += (player.y > canvas.height/2? 1 : -1)
+    }
+    if(intersectY) {
+        player.y = oldY
+        player.x += (player.x > canvas.width/2? 1 : -1)
+    }
+
+    angleToMouse = Math.atan2(mouse.y - player.y,mouse.x - player.x)
+
+    // PLAYER RENDER
+    ctx.save()  
+    
+    ctx.translate(player.x, player.y)
+    ctx.rotate(angleToMouse+Math.PI/2)
+
+    ctx.fillStyle = '#99d6ff'
+    ctx.beginPath()
+    ctx.moveTo(0, -36)
+    ctx.lineTo(15, 4)
+    ctx.lineTo(0, 14)
+    ctx.lineTo(-15,4)
+    ctx.closePath()
+    ctx.fill()
+
+    ctx.beginPath()
+    ctx.fillRect(-25, -4, 50, 8)
+
+    ctx.fillStyle = 'gray'
+    player.weapons.forEach(weapon => {
+        ctx.beginPath()
+        ctx.fillRect(weapon.x,weapon.y, weapon.width, weapon.height)
+    })
+    
+    ctx.beginPath()
+    ctx.arc(0,0,7,Math.PI,2*Math.PI);
+    ctx.fill()
+    ctx.restore()
+
+    // Hp Player
+    ctx.fillStyle = 'gray'
+    ctx.beginPath()
+    ctx.fillRect(player.x-player.radius, player.y+25, player.radius*2, 8)
+    var hpPercent = player.hp/player.maxHp
+    if (hpPercent > 0.5)
+        ctx.fillStyle = 'green'
+    else if (hpPercent > 0.3)
+        ctx.fillStyle = 'orange'
+    else 
+        ctx.fillStyle = 'red'
+    
+    ctx.fillRect(player.x-player.radius, player.y+25, player.radius*2*hpPercent, 8)
+
+
+   /* // Debug bounding
+    ctx.beginPath()
+    ctx.arc(player.x,player.y,player.radius,0,2*Math.PI);
+    ctx.stroke()*/
+
+    if(player.shooting && (Date.now() >= (player.lastShoot+player.fireRate))) {
+        player.lastShoot = Date.now()
+        console.log("hello")
+        player.weapons.forEach(weapon => { 
+            bullets.push({
+                id: player.id,
+                x: Math.cos(weapon.angle+angleToMouse+Math.PI/2)*weapon.magnitude + player.x,
+                y: Math.sin(weapon.angle+angleToMouse+Math.PI/2)*weapon.magnitude + player.y,
+                velX: Math.cos(angleToMouse)*player.shootVel,
+                velY: Math.sin(angleToMouse)*player.shootVel,
+                radius: weapon.bulletRadius,
+                damage: player.damage
+            })
+        })
+        
+    }
+    
+    // BOSS RENDER
+    
+    // layer 1
+    ctx.save()
+    ctx.translate(boss.x, boss.y)
+    boss.angle = Date.now() / 2000 % (Math.PI*2)+Math.PI/2
+    ctx.rotate(boss.angle)
+    
+    ctx.fillStyle = 'gray'
+    boss.weaponsBoss.forEach((weaponBoss,i) => {
+        ctx.beginPath()
+        ctx.fillRect(weaponBoss.x,weaponBoss.y, weaponBoss.width, weaponBoss.height)
+    
+    })
+    ctx.fillStyle = '#121212'
+    ctx.beginPath() 
+    ctx.arc(0,0,180,0,2*Math.PI);
+    ctx.fill()
+    
+    ctx.restore()
+
+    // layer 2
+    ctx.save()
+    ctx.translate(boss.x, boss.y)
+    boss.angle = Date.now() / 2000 % (Math.PI*2)+Math.PI/2
+    ctx.rotate(-boss.angle)
+
+    ctx.fillStyle = 'gray'
+    boss.weaponsBoss2.forEach((weaponBoss,i) => {
+        ctx.beginPath()
+        ctx.fillRect(weaponBoss.x,weaponBoss.y, weaponBoss.width, weaponBoss.height)
+    
+    })
+    ctx.fillStyle = '#232323'
+    ctx.beginPath() 
+    ctx.arc(0,0,80,0,2*Math.PI);
+    ctx.fill()
+
+    ctx.restore()
+
+    // Hp Boss
+    ctx.fillStyle = 'gray'
+    ctx.beginPath()
+    ctx.fillRect(boss.x-boss.radius, boss.y+230, boss.radius*2, 16)
+    var hpPercent = boss.hp/boss.maxHp
+    if (hpPercent > 0.5)
+        ctx.fillStyle = 'green'
+    else if (hpPercent > 0.3)
+        ctx.fillStyle = 'orange'
+    else 
+        ctx.fillStyle = 'red'
+    
+    ctx.fillRect(boss.x-boss.radius, boss.y+230, boss.radius*2*hpPercent, 16)
+    
+    if((Date.now() >= (boss.lastShoot+boss.fireRate))) {
+        boss.lastShoot = Date.now()
+        boss.weaponsBoss.forEach((weaponBoss,i) => {
+            bullets.push({
+                id: boss.id, //
+                x: Math.cos(weaponBoss.angle+boss.angle)*weaponBoss.magnitude + boss.x,
+                y: Math.sin(weaponBoss.angle+boss.angle)*weaponBoss.magnitude + boss.y,
+                velX: Math.cos(weaponBoss.angle+boss.angle)*boss.shootVel,
+                velY: Math.sin(weaponBoss.angle+boss.angle)*boss.shootVel,
+                radius: weaponBoss.bulletRadius,
+                damage: 2
+            })
+        })
+        boss.weaponsBoss2.forEach((weaponBoss,i) => {
+            bullets.push({
+                id: boss.id,
+                x: Math.cos(weaponBoss.angle-boss.angle)*weaponBoss.magnitude + boss.x,
+                y: Math.sin(weaponBoss.angle-boss.angle)*weaponBoss.magnitude + boss.y,
+                velX: Math.cos(weaponBoss.angle-boss.angle)*boss.shootVel,
+                velY: Math.sin(weaponBoss.angle-boss.angle)*boss.shootVel,
+                radius: weaponBoss.bulletRadius,
+                damage: 2
+            })
+        })
+    }
+
+    for (i = bullets.length-1; i >= 0; --i) {
+        ctx.fillStyle = bullets[i].id == player.id? 'blue' : 'red' 
+        ctx.beginPath() 
+        ctx.arc(bullets[i].x,bullets[i].y,bullets[i].radius,0,2*Math.PI);
+        ctx.fill()
+
+        bullets[i].x += bullets[i].velX
+        bullets[i].y += bullets[i].velY
+        
+        var deleteBullet = false
+        if(bullets[i].x > canvas.width+20 || bullets[i].x < -20) 
+            deleteBullet = true
+        if(bullets[i].y > canvas.height+20 || bullets[i].y < -20)  
+            deleteBullet = true
+        
+        if(bullets[i].id == player.id) {
+            console.log(bullets[i].radius)
+            //console.log(bullet.velX)
+            //console.log(bullet.velY)
+            enemies.forEach((enemy,j) => {
+                if(IntersectCirlce(bullets[i], enemy)) {
+                    deleteBullet = true
+                    enemy.hp -= bullets[i].damage
+                } 
+            })
+        }
+        else {
+            if(IntersectCirlce(player, bullets[i])) {
+                deleteBullet = true
+                player.hp -= bullets[i].damage
+            } 
+        }
+        
+        if(deleteBullet)  
+            bullets.splice(i,1)
+    }
+
+}
