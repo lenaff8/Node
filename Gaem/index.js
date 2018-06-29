@@ -81,7 +81,8 @@ function IntersectCirlce(c1, c2) {
 
 function logic () {
     setTimeout(logic, 16)
-  
+    if(boss.hp <= 0)
+        setTimeout(reset, 5000)
     //const { players, enemies, coins } = state
 
     var players = state.players
