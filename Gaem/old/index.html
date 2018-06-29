@@ -15,9 +15,8 @@
 </head>
 
 <body>
-<script src="weapons.js"></script>
-<script src="boss1Render.js"></script>
-<script src="/socket.io/socket.io.js"></script>
+<script src="./weapons.js"></script>
+<script src="./boss1Render.js"></script>
 <script>
     const canvas = document.createElement('canvas')
     document.body.appendChild(canvas)
@@ -25,21 +24,17 @@
     canvas.height = window.innerHeight
     const ctx = canvas.getContext('2d')
 
-    var state = undefined
-    var myPlayer = undefined
-
     const mouse = {
         x: 0,
         y: 0
     }
     const bullets = []
     const enemies = []
-    //const enemyBullets = []
+    const enemyBullets = []
 
     // init player
     weapons = [weapon1,weapon2]
     const player = {
-        id: 1,
         x: 0, y: 0,
         vel: 5, radius: 20,
         weapons,
@@ -64,9 +59,6 @@
     enemies.push(boss)
 
     function render() {
-        requestAnimationFrame(render)
-        //if (state === undefined) return
-        //const { players, enemies, bullets } = state
         ctx.fillStyle = '#EEEEFF'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
         
@@ -173,7 +165,6 @@
             console.log("hello")
             player.weapons.forEach(weapon => { 
                 bullets.push({
-                    id: player.id,
                     x: Math.cos(weapon.angle+angleToMouse+Math.PI/2)*weapon.magnitude + player.x,
                     y: Math.sin(weapon.angle+angleToMouse+Math.PI/2)*weapon.magnitude + player.y,
                     velX: Math.cos(angleToMouse)*player.shootVel,
@@ -185,7 +176,31 @@
             
         }
         
-        
+        bullets.forEach((bullet, i)=> {
+            ctx.fillStyle = 'blue' 
+            ctx.beginPath() 
+            ctx.arc(bullet.x,bullet.y,bullet.radius,0,2*Math.PI);
+            ctx.fill()
+
+            bullet.x += bullet.velX
+            bullet.y += bullet.velY
+            
+            var deleteBullet = false
+            if(bullet.x > canvas.width+20 || bullet.x < -20) 
+                deleteBullet = true
+            if(bullet.y > canvas.height+20 || bullet.y < -20)  
+                deleteBullet = true
+            
+            enemies.forEach((enemy,i) => {
+                if(IntersectCirlce(bullet, enemy)) {
+                    deleteBullet = true
+                    enemy.hp -= bullet.damage
+                } 
+            })
+            
+            if(deleteBullet)  
+                bullets.splice(i, 1)
+        })
 
         // BOSS RENDER
         
@@ -244,8 +259,7 @@
         if((Date.now() >= (boss.lastShoot+boss.fireRate))) {
             boss.lastShoot = Date.now()
             boss.weaponsBoss.forEach((weaponBoss,i) => {
-                bullets.push({
-                    id: boss.id, //
+                enemyBullets.push({
                     x: Math.cos(weaponBoss.angle+boss.angle)*weaponBoss.magnitude + boss.x,
                     y: Math.sin(weaponBoss.angle+boss.angle)*weaponBoss.magnitude + boss.y,
                     velX: Math.cos(weaponBoss.angle+boss.angle)*boss.shootVel,
@@ -255,8 +269,7 @@
                 })
             })
             boss.weaponsBoss2.forEach((weaponBoss,i) => {
-                bullets.push({
-                    id: boss.id,
+                enemyBullets.push({
                     x: Math.cos(weaponBoss.angle-boss.angle)*weaponBoss.magnitude + boss.x,
                     y: Math.sin(weaponBoss.angle-boss.angle)*weaponBoss.magnitude + boss.y,
                     velX: Math.cos(weaponBoss.angle-boss.angle)*boss.shootVel,
@@ -266,10 +279,9 @@
                 })
             })
         }
-
-        bullets.forEach((bullet, i)=> {
-            
-            ctx.fillStyle = bullet.id == player.id? 'blue' : 'red' 
+        
+        enemyBullets.forEach((bullet, i)=> {
+            ctx.fillStyle = 'red' 
             ctx.beginPath() 
             ctx.arc(bullet.x,bullet.y,bullet.radius,0,2*Math.PI);
             ctx.fill()
@@ -282,29 +294,17 @@
                 deleteBullet = true
             if(bullet.y > canvas.height+20 || bullet.y < -20)  
                 deleteBullet = true
-            
-            if(bullet.id == player.id) {
-                console.log(bullet.radius)
-                //console.log(bullet.velX)
-                //console.log(bullet.velY)
-                enemies.forEach((enemy,i) => {
-                    if(IntersectCirlce(bullet, enemy)) {
-                        deleteBullet = true
-                        enemy.hp -= bullet.damage
-                    } 
-                })
-            }
-            else {
-                if(IntersectCirlce(player, bullet)) {
-                    deleteBullet = true
-                    player.hp -= bullet.damage
-                } 
-            }
-            
+
+            if(IntersectCirlce(player, bullet)) {
+                deleteBullet = true
+                player.hp -= bullet.damage
+            } 
+
             if(deleteBullet)  
-                bullets.splice(i, 1)
+                enemyBullets.splice(i, 1)
         })
 
+        requestAnimationFrame(render)
     }
     requestAnimationFrame(render)
     const keyboard = {}
